@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.talentnext.helloworld.HelloWorldControllerTest
+-------------------------------------------------------------------------------
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.919 s -- in com.talentnext.helloworld.HelloWorldControllerTest

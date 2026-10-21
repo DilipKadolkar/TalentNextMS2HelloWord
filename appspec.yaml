@@ -1,0 +1,14 @@
+version: 0.0
+
+# CodeDeploy AppSpec for an Amazon ECS blue/green deployment.
+# CodePipeline replaces <TASK_DEFINITION> with the ARN of the task definition it
+# registers from taskdef.json (with <IMAGE1_NAME> filled from imageDetail.json).
+Resources:
+  - TargetService:
+      Type: AWS::ECS::Service
+      Properties:
+        TaskDefinition: <TASK_DEFINITION>
+        LoadBalancerInfo:
+          ContainerName: "hello-world-container"
+          ContainerPort: 8080
+        PlatformVersion: "LATEST"

@@ -1,0 +1,47 @@
+version: 0.2
+
+# CodeBuild project: hello-world-build
+# Requires "Privileged" mode enabled on the CodeBuild environment (needed to run Docker).
+# AWS_DEFAULT_REGION is provided by CodeBuild; the account id is looked up at build time.
+
+env:
+  variables:
+    ECR_REPOSITORY_NAME: "hello-world-app"
+    CONTAINER_NAME: "hello-world-container"
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+      - ECR_REGISTRY=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+      - REPOSITORY_URI=$ECR_REGISTRY/$ECR_REPOSITORY_NAME
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=${COMMIT_HASH:-latest}
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo "Building the Docker image - Maven build and unit tests run inside the Dockerfile"
+      - docker build -t $REPOSITORY_URI:latest .
+      - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
+  post_build:
+    commands:
+      - echo Pushing the Docker images to ECR...
+      - docker push $REPOSITORY_URI:latest
+      - docker push $REPOSITORY_URI:$IMAGE_TAG
+      - echo Writing deployment artifacts...
+      # imagedefinitions.json -> used by the "Amazon ECS" (rolling update) deploy action
+      - printf '[{"name":"%s","imageUri":"%s"}]' $CONTAINER_NAME $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
+      # imageDetail.json -> used by the "Amazon ECS (Blue/Green)" CodeDeploy deploy action
+      - printf '{"ImageURI":"%s"}' $REPOSITORY_URI:$IMAGE_TAG > imageDetail.json
+      # Fill account id / region into the task definition template
+      - sed -i "s|<AWS_ACCOUNT_ID>|$AWS_ACCOUNT_ID|g; s|<AWS_REGION>|$AWS_DEFAULT_REGION|g" taskdef.json
+      - echo Build completed on `date`
+
+artifacts:
+  files:
+    - imagedefinitions.json
+    - imageDetail.json
+    - appspec.yaml
+    - taskdef.json

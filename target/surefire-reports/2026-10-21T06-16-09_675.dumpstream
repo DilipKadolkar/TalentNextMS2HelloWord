@@ -1,0 +1,5 @@
+# Created at 2026-10-21T06:16:10.045
+Boot Manifest-JAR contains absolute paths in classpath 'D:\IdeaProjects\MphasisCodeCafeCC\hello-world-app\target\test-classes'
+Hint: <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+'other' has different root
+
